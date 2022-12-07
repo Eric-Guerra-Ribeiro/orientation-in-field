@@ -2,6 +2,7 @@ from collections import namedtuple
 import numpy as np
 import PIL.Image
 import cv2
+import random
 
 Reference = namedtuple('Reference', ['img', 'angle', 'points', 'descriptor'])
 
@@ -43,17 +44,24 @@ class OrientationFinder:
         # We determine the strong_matches using a heuristic distance factor
         strong_matches = [r1 for r1, r2 in matches if r1.distance < 0.7 * r2.distance]
         equal_ref_pts = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
-        equal_img_pts = np.array([img_points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
+        equal_img_pts = np.array([img_points[r.trainIdx].pt for r in strong_matches], dtype=np.float32)
         return equal_ref_pts, equal_img_pts
 
-    def draw_lines_difference(self, ref_pts, img_pts, img):
-        
-        # img = np.repeat(img[:, :, None], 3, axis=-1)
+    def draw_lines_difference(self, ref_pts, img_pts, img, ref_img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ref_img = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
         for p, pref in zip(img_pts, ref_pts): # Desenha uma linha ligando os pares de pontos
-            print(p)
-            print(pref)
-            cv2.line(img, np.uint(pref), np.uint(p), (250, 0, 0))
+            if (random.uniform(0, 1) > 0.99):
+                cv2.line(img, np.uint(pref), np.uint(p), (250, 250, 0))
+                cv2.line(ref_img, np.uint(pref), np.uint(p), (250, 250, 0))
+                cv2.circle(img, np.uint(p), 3, (250, 0, 0), 3)
+                cv2.circle(ref_img, np.uint(pref), 3, (0, 250, 0), 3)
+        mid_img = np.uint8(0.5*np.float64(img) + 0.5*np.float64(ref_img))
         PIL.Image.fromarray(img).show()
+        PIL.Image.fromarray(ref_img).show()
+        PIL.Image.fromarray(mid_img).show()
+        # cv2.imshow("help", img)
+        # cv2.waitKey(0)
 
     def eval_image(self, img):
         """
@@ -78,6 +86,7 @@ class OrientationFinder:
 
         best_ref_pts = None
         best_img_pts = None
+        best_ref_img = None
         most_pts = -1
 
         for ref in self.references:
@@ -86,16 +95,17 @@ class OrientationFinder:
             if points_quantity > most_pts:
                 best_ref_pts = ref_pts
                 best_img_pts = img_pts
+                best_ref_img = ref.img
                 most_pts = points_quantity
             correspondece_vector.append((ref.angle, points_quantity))
         correspondece_vector.sort(key=lambda c: -c[1])
 
 
 
-        self.draw_lines_difference(ref_pts, img_pts, img)
+        self.draw_lines_difference(best_ref_pts, best_img_pts, img, best_ref_img)
 
         main_angle = int(correspondece_vector[0][0])
-        
+        print(main_angle)
         num = get_angle_diff(main_angle, int(correspondece_vector[1][0])) * correspondece_vector[1][1] + get_angle_diff(main_angle, int(correspondece_vector[2][0])) * correspondece_vector[2][1]
         den = correspondece_vector[0][1] + correspondece_vector[1][1] + correspondece_vector[2][1]
         angle = main_angle + num/den
