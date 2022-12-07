@@ -29,6 +29,9 @@ for file in dataset_path.glob("*.png"):
 
 orientation_finder = OrientationFinder(ref_imgs, ref_angles)
 
-for i in range(len(imgs)):
-    print("Image from test case " + test_cases[i] + " and angle " + str(angles[i]) + ":")
-    print (abs(get_distance(int(angles[i]),  orientation_finder.eval_image(imgs[i]))))
+
+for i in range(1):
+   print("Image from test case " + test_cases[i] + " and angle " + str(angles[i]) + ":")
+   print (abs(get_distance(int(angles[i]),  orientation_finder.eval_image(imgs[i]))))
+
+

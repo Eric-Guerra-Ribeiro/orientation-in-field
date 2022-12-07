@@ -1,6 +1,6 @@
 from collections import namedtuple
 import numpy as np
-
+import PIL.Image
 import cv2
 
 Reference = namedtuple('Reference', ['img', 'angle', 'points', 'descriptor'])
@@ -42,8 +42,18 @@ class OrientationFinder:
         matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
         # We determine the strong_matches using a heuristic distance factor
         strong_matches = [r1 for r1, r2 in matches if r1.distance < 0.7 * r2.distance]
-        equal_points = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
-        return len(equal_points)
+        equal_ref_pts = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
+        equal_img_pts = np.array([img_points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
+        return equal_ref_pts, equal_img_pts
+
+    def draw_lines_difference(self, ref_pts, img_pts, img):
+        
+        # img = np.repeat(img[:, :, None], 3, axis=-1)
+        for p, pref in zip(img_pts, ref_pts): # Desenha uma linha ligando os pares de pontos
+            print(p)
+            print(pref)
+            cv2.line(img, np.uint(pref), np.uint(p), (250, 0, 0))
+        PIL.Image.fromarray(img).show()
 
     def eval_image(self, img):
         """
@@ -66,10 +76,24 @@ class OrientationFinder:
 
         correspondece_vector = []
 
+        best_ref_pts = None
+        best_img_pts = None
+        most_pts = -1
+
         for ref in self.references:
-            points_quantity = self.get_equal_points(ref, img)
+            ref_pts, img_pts = self.get_equal_points(ref, img)
+            points_quantity = len(ref_pts)
+            if points_quantity > most_pts:
+                best_ref_pts = ref_pts
+                best_img_pts = img_pts
+                most_pts = points_quantity
             correspondece_vector.append((ref.angle, points_quantity))
         correspondece_vector.sort(key=lambda c: -c[1])
+
+
+
+        self.draw_lines_difference(ref_pts, img_pts, img)
+
         main_angle = int(correspondece_vector[0][0])
         
         num = get_angle_diff(main_angle, int(correspondece_vector[1][0])) * correspondece_vector[1][1] + get_angle_diff(main_angle, int(correspondece_vector[2][0])) * correspondece_vector[2][1]
