@@ -1,4 +1,5 @@
 from collections import namedtuple
+import numpy as np
 
 import cv2
 
@@ -28,3 +29,48 @@ class OrientationFinder:
             Reference(ref_img, ref_angles[i], *self.detector.detectAndCompute(ref_img, None))
             for i, ref_img in enumerate(ref_imgs)
         ]
+
+    def get_equal_points(self, ref, img):
+        """
+        Returns the number of points that match with the given
+        image and a reference image.        
+        :param ref_img: reference image to count the number of
+        equal points.
+        :return: number of equal points between the two images.
+        """
+        img_points, img_descriptors = self.detector.detectAndCompute(img, None)
+        matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
+        # We determine the strong_matches using a heuristic distance factor
+        strong_matches = [r1 for r1, r2 in matches if r1.distance < 0.7 * r2.distance]
+        equal_points = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
+        return len(equal_points)
+
+    def eval_image(self, img):
+        """
+        Prints the closest orientation that match the current image.
+        """
+
+        correspondece_vector = []
+
+        for ref in self.references:
+            points_quantity = self.get_equal_points(ref, img)
+            correspondece_vector.append((ref.angle, points_quantity))
+
+        correspondece_vector.sort(key=lambda c: -c[1])
+
+        main_angle = int(correspondece_vector[0][0])
+        neg_angle = 1
+        pos_angle = 2
+
+        if (main_angle < int(correspondece_vector[1][0])):
+            neg_angle = 2
+            pos_angle = 1
+        else:
+            neg_angle = 2
+            pos_angle = 1
+        
+        num = 45 * correspondece_vector[pos_angle][1] - 45 * correspondece_vector[neg_angle][1]
+        den = correspondece_vector[0][1] + correspondece_vector[1][1] + correspondece_vector[2][1]
+        angle = main_angle +  num/den
+
+        print(angle)

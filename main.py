@@ -14,8 +14,7 @@ angles = []
 test_cases = []
 
 for file in dataset_path.glob("*.png"):
-    
-    img_name = str(file).split("/")[-1]
+    img_name = file.name.split("/")[-1]
     split_name = img_name.split("_")
     img_angle = split_name[-1].split(".")[0]
     img_case = split_name[0]
@@ -28,3 +27,7 @@ for file in dataset_path.glob("*.png"):
     test_cases.append(img_case)
 
 orientation_finder = OrientationFinder(ref_imgs, ref_angles)
+
+for i in range(len(imgs)):
+    print("Image from test case " + test_cases[i] + " and angle " + str(angles[i]) + ":")
+    orientation_finder.eval_image(imgs[i])
