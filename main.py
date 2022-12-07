@@ -4,6 +4,8 @@ import cv2
 
 from src.orientation_finder import OrientationFinder
 
+from src.utils import get_distance
+
 dataset_path = Path("./dataset/A/")
 
 ref_imgs = []
@@ -30,4 +32,4 @@ orientation_finder = OrientationFinder(ref_imgs, ref_angles)
 
 for i in range(len(imgs)):
     print("Image from test case " + test_cases[i] + " and angle " + str(angles[i]) + ":")
-    orientation_finder.eval_image(imgs[i])
+    print (abs(get_distance(int(angles[i]),  orientation_finder.eval_image(imgs[i]))))

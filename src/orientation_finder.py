@@ -50,27 +50,31 @@ class OrientationFinder:
         Prints the closest orientation that match the current image.
         """
 
+        def get_angle_diff(angle1, angle2):
+            phi = abs(angle2-angle1) % 360
+            sign = 1
+            # Used to calculate sign
+            if not ((angle1-angle2 >= 0 and angle1-angle2 <= 180) or (
+                    angle1-angle2 <= -180 and angle1-angle2 >= -360)):
+                sign = -1
+            if phi > 180:
+                result = 360-phi
+            else:
+                result = phi
+
+            return result*sign
+
         correspondece_vector = []
 
         for ref in self.references:
             points_quantity = self.get_equal_points(ref, img)
             correspondece_vector.append((ref.angle, points_quantity))
-
         correspondece_vector.sort(key=lambda c: -c[1])
-
         main_angle = int(correspondece_vector[0][0])
-        neg_angle = 1
-        pos_angle = 2
-
-        if (main_angle < int(correspondece_vector[1][0])):
-            neg_angle = 2
-            pos_angle = 1
-        else:
-            neg_angle = 2
-            pos_angle = 1
         
-        num = 45 * correspondece_vector[pos_angle][1] - 45 * correspondece_vector[neg_angle][1]
+        num = get_angle_diff(main_angle, int(correspondece_vector[1][0])) * correspondece_vector[1][1] + get_angle_diff(main_angle, int(correspondece_vector[2][0])) * correspondece_vector[2][1]
         den = correspondece_vector[0][1] + correspondece_vector[1][1] + correspondece_vector[2][1]
-        angle = main_angle +  num/den
-
-        print(angle)
+        angle = main_angle + num/den
+        if angle < 0:
+            angle = 360 + angle
+        return angle
