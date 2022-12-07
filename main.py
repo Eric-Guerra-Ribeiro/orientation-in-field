@@ -2,6 +2,8 @@ from pathlib import Path
 
 import cv2
 
+import numpy as np
+
 from src.orientation_finder import OrientationFinder
 
 from src.utils import get_distance
@@ -28,7 +30,10 @@ for file in dataset_path.glob("*.png"):
     test_cases.append(img_case)
 
 orientation_finder = OrientationFinder(ref_imgs, ref_angles)
+angle_diff_vec = []
 
 for i in range(len(imgs)):
-    print("Image from test case " + test_cases[i] + " and angle " + str(angles[i]) + ":")
-    print (abs(get_distance(int(angles[i]),  orientation_finder.eval_image(imgs[i]))))
+    angle_diff_vec.append(abs(get_distance(int(angles[i]),  orientation_finder.eval_image(imgs[i]))))
+
+print ("Mean: " + str(np.array(angle_diff_vec).mean()))
+print ("Std Dev: " + str(np.array(angle_diff_vec).std()))
