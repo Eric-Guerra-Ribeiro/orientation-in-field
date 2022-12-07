@@ -14,9 +14,7 @@ angles = []
 test_cases = []
 
 for file in dataset_path.glob("*.png"):
-    
-    img_name = str(file).split("/")[-1]
-    split_name = img_name.split("_")
+    split_name = file.name.split("_")
     img_angle = split_name[-1].split(".")[0]
     img_case = split_name[0]
     img = cv2.imread(str(file), cv2.IMREAD_ANYCOLOR)
