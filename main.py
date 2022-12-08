@@ -20,7 +20,7 @@ for file in dataset_path.glob("*.png"):
     img_angle = split_name[-1].split(".")[0]
     img_case = split_name[0]
     img = cv2.imread(str(file), cv2.IMREAD_ANYCOLOR)
-    if img_case == "ref":
+    if img_case == "ref" and img_angle not in ["45", "135", "225", "315"]:
         ref_imgs.append(img)
         ref_angles.append(img_angle)
     imgs.append(img)

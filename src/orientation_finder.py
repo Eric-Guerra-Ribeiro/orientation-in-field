@@ -51,7 +51,7 @@ class OrientationFinder:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         ref_img = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
         for p, pref in zip(img_pts, ref_pts): # Desenha uma linha ligando os pares de pontos
-            if (random.uniform(0, 1) > 0.99):
+            # if (random.uniform(0, 1) > 0.98):
                 cv2.line(img, np.uint(pref), np.uint(p), (250, 250, 0))
                 cv2.line(ref_img, np.uint(pref), np.uint(p), (250, 250, 0))
                 cv2.circle(img, np.uint(p), 3, (250, 0, 0), 3)
@@ -105,10 +105,11 @@ class OrientationFinder:
         self.draw_lines_difference(best_ref_pts, best_img_pts, img, best_ref_img)
 
         main_angle = int(correspondece_vector[0][0])
-        print(main_angle)
+        print(f"Main angle: {main_angle}")
         num = get_angle_diff(main_angle, int(correspondece_vector[1][0])) * correspondece_vector[1][1] + get_angle_diff(main_angle, int(correspondece_vector[2][0])) * correspondece_vector[2][1]
         den = correspondece_vector[0][1] + correspondece_vector[1][1] + correspondece_vector[2][1]
         angle = main_angle + num/den
         if angle < 0:
             angle = 360 + angle
+        print(f"Estimated angle: {angle}")
         return angle
