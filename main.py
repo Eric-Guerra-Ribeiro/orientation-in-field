@@ -3,7 +3,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from src.orientation_finder import OrientationFinder
+from src.orientation_finder import OrientationFinder, OrientMode
 from src.utils import get_angle_diff
 
 dataset_path = Path("./dataset/A/")
@@ -34,7 +34,7 @@ orientation_finder = OrientationFinder(ref_imgs, ref_angles)
 angle_diff_vec = []
 
 for i in range(len(imgs)):
-    angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i]))))
+    angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], OrientMode.WEIGHT_AVG))))
 
 print ("Mean: " + str(np.array(angle_diff_vec).mean()))
 print ("Std Dev: " + str(np.array(angle_diff_vec).std()))
