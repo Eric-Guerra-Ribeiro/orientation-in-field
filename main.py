@@ -3,8 +3,17 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from src.orientation_finder import OrientationFinder, OrientMode
-from src.utils import get_angle_diff
+from src.orientation_finder import OrientationFinder, OrientMethod
+from src.utils import get_angle_diff, build_intrinsic_mtx
+
+# Camera Params
+fov = 1.012300
+cx = 320
+cy = 240
+fx = cx/np.tan(fov/2)
+fy = cy/np.tan(fov/2)
+
+intrinsic_mtx = build_intrinsic_mtx(fx, fy, cx, cy)
 
 dataset_path = Path("./dataset/A/")
 
@@ -30,11 +39,11 @@ for file in dataset_path.glob("*.png"):
     angles.append(img_angle)
     test_cases.append(img_case)
 
-orientation_finder = OrientationFinder(ref_imgs, ref_angles)
+orientation_finder = OrientationFinder(ref_imgs, ref_angles, intrinsic_mtx)
 angle_diff_vec = []
 
 for i in range(len(imgs)):
-    angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], OrientMode.WEIGHT_AVG))))
+    angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], OrientMethod.RECOVER_POSE))))
 
 print ("Mean: " + str(np.array(angle_diff_vec).mean()))
 print ("Std Dev: " + str(np.array(angle_diff_vec).std()))

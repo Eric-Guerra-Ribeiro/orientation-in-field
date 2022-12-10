@@ -5,26 +5,26 @@ from enum import Enum
 import numpy as np
 import cv2
 
-from src.utils import get_angle_diff, weighted_avg
+from src.utils import get_angle_diff, weighted_avg, calc_euler_angles
 
-class OrientMode(Enum):
+class OrientMethod(Enum):
     BEST_REF = 0
     WEIGHT_AVG = 1
+    RECOVER_POSE = 2
 
 
 class OrientationFinder:
     """
-    Finds the orientation/side in the field based on the background
-
+    Finds the orientation/side in the field based on the background.
     Has references images with known orientation and compares them
-    to a new image to estimate the orientation in which the image
+    to a new image to estimate the orientation in which the image.
     was taken.
     """
     
     Reference = namedtuple('Reference', ['img', 'angle', 'points', 'descriptor'])
     RefMatch = namedtuple('RefMatch', ['ref_angle', 'num_matches'])
 
-    def __init__(self, ref_imgs, ref_angles) -> None:
+    def __init__(self, ref_imgs, ref_angles, intrinsic_mtx=None) -> None:
         """
         Initializes the Orientation Finder
         :param ref_imgs: List with the reference images
@@ -40,6 +40,8 @@ class OrientationFinder:
             self.Reference(ref_img, ref_angles[i], *self.detector.detectAndCompute(ref_img, None))
             for i, ref_img in enumerate(ref_imgs)
         ]
+
+        self.intrinsic_mtx = intrinsic_mtx
 
     def get_num_equal_pts(self, ref, img_descriptors):
         """
@@ -58,14 +60,14 @@ class OrientationFinder:
         )
         return num_equal_pts
 
-    def get_equal_pts(self, ref, img_descriptors, img_pts):
+    def get_equal_pts(self, ref, img_pts, img_descriptors):
         """
         Returns the number of points that match with the given
         image and a reference image.
         :param ref: Reference image to count the number of equal points.
         Has the descriptors and points.
-        :param img_descriptors: descriptors for the image points found by the detector.
         :param img_pts: image points found by the detector.
+        :param img_descriptors: descriptors for the image points found by the detector.
         :return: np.array with the matched points position in the reference and in the image.
         """
         matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
@@ -75,22 +77,29 @@ class OrientationFinder:
         equal_img_pts = np.array([img_pts[r.trainIdx].pt for r in strong_matches], dtype=np.float32)
         return equal_ref_pts, equal_img_pts
 
-    def calc_orientation_best_ref(self, img_descriptors):
+    def get_best_ref(self, img_descriptors):
         """
-        Calculates the orientation according to the best reference found.
-        :return: Orientation angle in degrees. Limited to [0, 360[
+        Returns the best reference found.
+        :return: Best reference found
         """
 
-        angle = None
+        best_ref = None
         max_matches = -1
 
         for ref in self.references:
             num_matches = self.get_num_equal_pts(ref, img_descriptors)
             if num_matches > max_matches:
-                angle = ref.angle
+                best_ref = ref
                 max_matches = num_matches
 
-        return angle
+        return best_ref
+
+    def calc_orientation_best_ref(self, img_descriptors):
+        """
+        Calculates the orientation according to the best reference found.
+        :return: Orientation angle in degrees. Limited to [0, 360[
+        """
+        return self.get_best_ref(img_descriptors).angle
 
     def calc_orientation_weight_avg(self, img_descriptors):
         """
@@ -100,7 +109,6 @@ class OrientationFinder:
         :param img_descriptors: descriptors for the image points found by the detector.
         :return: Orientation angle in degrees. Limited to [0, 360[
         """
-
         # List of tuples storing the number of matches for each reference
         # The first entry is the reference angle and the second the number of matches
         ref_matches_list: list[self.RefMatch] = []
@@ -111,7 +119,7 @@ class OrientationFinder:
 
         ref_matches_list.sort(key=lambda c: c.num_matches, reverse=True)
         main_angle = ref_matches_list[0].ref_angle
-        
+
         values = [
             get_angle_diff(main_angle, ref_matches_list[i].ref_angle)
             for i in range(min(len(ref_matches_list), 3))
@@ -125,18 +133,41 @@ class OrientationFinder:
         angle = main_angle + delta_angle
         return angle if angle >= 0 else 360 + angle
 
+    def calc_orientation_recover_pose(self, img_pts, img_descriptors):
+        """
+        Calculates the orientation according to the cv2.recoverPose function.
+        :param img_pts: image points found by the detector.
+        :param img_descriptors: descriptors for the image points found by the detector.
+        :return: Orientation angle in degrees. Limited to [0, 360[
+        """
+        ref = self.get_best_ref(img_descriptors)
+        equal_ref_pts, equal_img_pts = self.get_equal_pts(ref, img_pts, img_descriptors)
+        try:
+            _, _, rotation_mtx, translation_versor, inliers = cv2.recoverPose(
+                points1=equal_ref_pts, points2=equal_img_pts, cameraMatrix1=self.intrinsic_mtx,
+                distCoeffs1=None, cameraMatrix2=self.intrinsic_mtx, distCoeffs2=None,
+                method=cv2.USAC_ACCURATE, prob=0.9999, threshold=2
+            )
+            delta_yaw, delta_pitch, delta_roll = calc_euler_angles(rotation_mtx)
+            return ref.angle + delta_pitch
+        except:
+            # Hack: for some reason, on the reference images, opencv uses the wrong
+            # overloaded function and it raises an assertion error.
+            return ref.angle
 
-    def calc_orientation(self, img, mode=OrientMode.WEIGHT_AVG):
+    def calc_orientation(self, img,  method=OrientMethod.RECOVER_POSE):
         """
         Calculates the orientation using the desired mode.
         :param img: Image in which the orientation is to be calculated
-        :param mode: Mode in which to estimate the orientation
+        :param method: Method in which to estimate the orientation
         :return: Orientation angle in degrees. Limited to [0, 360[
         """
 
-        img_points, img_descriptors = self.detector.detectAndCompute(img, None)
-        
-        if mode == OrientMode.BEST_REF:
+        img_pts, img_descriptors = self.detector.detectAndCompute(img, None)
+
+        if  method == OrientMethod.BEST_REF:
             return self.calc_orientation_best_ref(img_descriptors)
-        elif mode == OrientMode.WEIGHT_AVG:
+        elif  method == OrientMethod.WEIGHT_AVG:
             return self.calc_orientation_weight_avg(img_descriptors)
+        elif  method == OrientMethod.RECOVER_POSE:
+            return self.calc_orientation_recover_pose(img_pts, img_descriptors)
