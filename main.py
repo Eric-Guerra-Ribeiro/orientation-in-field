@@ -17,7 +17,7 @@ intrinsic_mtx = build_intrinsic_mtx(fx, fy, cx, cy)
 
 dataset_path = Path("./dataset/A/")
 
-use45s = True
+use45s = False
 
 ref_imgs = []
 ref_angles = []
@@ -42,7 +42,7 @@ for file in dataset_path.glob("*.png"):
 orientation_finder = OrientationFinder(ref_imgs, ref_angles, intrinsic_mtx)
 angle_diff_vec = []
 
-for i in range(len(imgs)):
+for i in range(1):
     angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], OrientMethod.RECOVER_POSE))))
 
 print ("Mean: " + str(np.array(angle_diff_vec).mean()))

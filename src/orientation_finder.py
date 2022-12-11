@@ -3,6 +3,7 @@ from functools import reduce
 from enum import Enum
 
 import numpy as np
+import PIL.Image
 import cv2
 
 from src.utils import get_angle_diff, weighted_avg, calc_euler_angles
@@ -133,7 +134,7 @@ class OrientationFinder:
         angle = main_angle + delta_angle
         return angle if angle >= 0 else 360 + angle
 
-    def calc_orientation_recover_pose(self, img_pts, img_descriptors):
+    def calc_orientation_recover_pose(self, img_pts, img_descriptors, img):
         """
         Calculates the orientation according to the cv2.recoverPose function.
         :param img_pts: image points found by the detector.
@@ -149,6 +150,23 @@ class OrientationFinder:
                 method=cv2.USAC_ACCURATE, prob=0.9999, threshold=2
             )
             delta_yaw, delta_pitch, delta_roll = calc_euler_angles(rotation_mtx)
+
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            ref_img = cv2.cvtColor(ref.img, cv2.COLOR_BGR2RGB)
+
+            for p, pref, inlier in zip(equal_img_pts, equal_ref_pts, inliers.ravel()): # Desenha uma linha ligando os pares de pontos
+                cor = (255, 0, 0)
+                if inlier:
+                    cor = (0, 255, 0)
+                cv2.line(img, np.int32(pref), np.int32(p), cor)
+                cv2.line(ref_img, np.int32(pref), np.int32(p), cor)
+            mid_img = np.uint8(0.5*np.float64(img) + 0.5*np.float64(ref_img))
+            PIL.Image.fromarray(img).show()
+            PIL.Image.fromarray(ref_img).show()
+            PIL.Image.fromarray(mid_img).show()
+
+
             return ref.angle + delta_pitch
         except:
             # Hack: for some reason, on the reference images, opencv uses the wrong
@@ -170,4 +188,4 @@ class OrientationFinder:
         elif  method == OrientMethod.WEIGHT_AVG:
             return self.calc_orientation_weight_avg(img_descriptors)
         elif  method == OrientMethod.RECOVER_POSE:
-            return self.calc_orientation_recover_pose(img_pts, img_descriptors)
+            return self.calc_orientation_recover_pose(img_pts, img_descriptors, img)
