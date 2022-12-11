@@ -56,14 +56,9 @@ end_time = time.time()
 
 print("Execution Time: %.2fs" % (end_time - start_time))
 print ("Mean: %.2f degrees" % np.array(errors).mean())
-print ("Std Dev: %.2f degrees" % np.array(errors).std())
+print ("Std Dev: %.2f degrees" % np.array(errors).std())    
 
-if (orient_method == OrientMethod.WEIGHT_AVG):
-    bins = np.linspace(0, 50, 25)
-else:
-    bins = len(errors)
-
-plt.hist(errors, bins=bins, histtype='bar', ec='black')
+plt.hist(errors, bins=np.linspace(0, 50, 25), histtype='bar', ec='black')
 plt.title('Error Histogram')
 plt.xlabel('Angle Error')
 plt.ylabel('Frequency')
