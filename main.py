@@ -2,6 +2,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+import time
 
 from src.orientation_finder import OrientationFinder, OrientMethod
 from src.utils import get_angle_diff, build_intrinsic_mtx
@@ -40,10 +42,30 @@ for file in dataset_path.glob("*.png"):
     test_cases.append(img_case)
 
 orientation_finder = OrientationFinder(ref_imgs, ref_angles, intrinsic_mtx)
-angle_diff_vec = []
+errors = []
 
+### Comment the lines below to select the method to use
+# orient_method = OrientMethod.BEST_REF
+# orient_method = OrientMethod.WEIGHT_AVG
+orient_method = OrientMethod.RECOVER_POSE
+
+start_time = time.time()
 for i in range(len(imgs)):
-    angle_diff_vec.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], OrientMethod.RECOVER_POSE))))
+    errors.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], orient_method))))
+end_time = time.time()
 
-print ("Mean: " + str(np.array(angle_diff_vec).mean()))
-print ("Std Dev: " + str(np.array(angle_diff_vec).std()))
+print("Execution Time: %.2fs" % (end_time - start_time))
+print ("Mean: %.2f degrees" % np.array(errors).mean())
+print ("Std Dev: %.2f degrees" % np.array(errors).std())
+
+if (orient_method == OrientMethod.WEIGHT_AVG):
+    bins = np.linspace(0, 50, 25)
+else:
+    bins = len(errors)
+
+plt.hist(errors, bins=bins, histtype='bar', ec='black')
+plt.title('Error Histogram')
+plt.xlabel('Angle Error')
+plt.ylabel('Frequency')
+plt.locator_params(axis='y', integer=True)
+plt.show()

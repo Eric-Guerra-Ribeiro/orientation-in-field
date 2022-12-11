@@ -1,0 +1,12 @@
+BEST_REF
+Execution Time: 14.70s
+Mean: 9.38 degrees
+Std Dev: 8.77 degrees
+WEIGHT_AVG
+Execution Time: 14.43s
+Mean: 15.97 degrees
+Std Dev: 13.67 degrees
+RECOVER_POSE
+Execution Time: 16.39s
+Mean: 9.38 degrees
+Std Dev: 8.77 degrees

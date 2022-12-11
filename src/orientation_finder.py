@@ -12,15 +12,13 @@ class OrientMethod(Enum):
     WEIGHT_AVG = 1
     RECOVER_POSE = 2
 
-
 class OrientationFinder:
     """
     Finds the orientation/side in the field based on the background.
     Has references images with known orientation and compares them
     to a new image to estimate the orientation in which the image.
     was taken.
-    """
-    
+    """    
     Reference = namedtuple('Reference', ['img', 'angle', 'points', 'descriptor'])
     RefMatch = namedtuple('RefMatch', ['ref_angle', 'num_matches'])
 
