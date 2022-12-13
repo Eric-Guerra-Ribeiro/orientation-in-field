@@ -4,12 +4,17 @@
 
 Final Project for CM-203 Computer Vision course. The idea is to identify the side/orientation in the soccer field by the background.
 
+## Run
+
+In the root folder, run `pip install -r requirements.txt` to install the packages needed. It's recommend to do this inside a python virtual environment. Besides that, you need to have Eigen installed.
+
+After that, run the `main.py` file inside the `src` folder. The result histogram should appear on the screen and some metrics in the terminal.
+
+You can choose the method to calculate the orientation inside the `main.py` file, by commenting/uncommenting the line that declare the `orient_method` variable.
+
 ## Test Dataset
 
 <img src=docs/field.png width=500>
-
-
-## Results
 
 ## Examples
 
