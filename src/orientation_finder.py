@@ -148,7 +148,7 @@ class OrientationFinder:
             )
             delta_yaw, delta_pitch, delta_roll = calc_euler_angles(rotation_mtx)
             return ref.angle + delta_pitch
-        except:
+        except cv2.error:
             # Hack: for some reason, on the reference images, opencv uses the wrong
             # overloaded function and it raises an assertion error.
             return ref.angle
