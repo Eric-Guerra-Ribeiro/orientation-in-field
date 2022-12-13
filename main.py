@@ -49,12 +49,16 @@ errors = []
 # orient_method = OrientMethod.WEIGHT_AVG
 orient_method = OrientMethod.RECOVER_POSE
 
-start_time = time.time()
+times = []
 for i in range(len(imgs)):
+    start_time = time.time()
     errors.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], orient_method))))
-end_time = time.time()
+    end_time = time.time()
+    times.append(end_time - start_time)
 
-print("Execution Time: %.2fs" % (end_time - start_time))
+times = 1000*np.array(times) # Converting to ms
+
+print(f"Execution Time: {times.mean():.0f}±{times.std():.0f} ms per iteration")
 print ("Mean: %.2f degrees" % np.array(errors).mean())
 print ("Std Dev: %.2f degrees" % np.array(errors).std())    
 
