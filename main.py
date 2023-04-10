@@ -31,7 +31,7 @@ test_cases = []
 
 for file in dataset_path.glob("*.png"):
     split_name = file.name.split("_")
-    img_angle = int(split_name[-1].split(".")[0])
+    img_angle = int(split_name[1])
     img_case = split_name[0]
     img = cv2.imread(str(file), cv2.IMREAD_ANYCOLOR)
     if img_case == "ref":
@@ -42,7 +42,7 @@ for file in dataset_path.glob("*.png"):
     angles.append(img_angle)
     test_cases.append(img_case)
 
-vision_params = VisionParams(4500, 1.19, 50, 0.9999, 2)
+vision_params = VisionParams(5000, 1.19, 31, 50, 0.9999, 2)
 
 orientation_finder = OrientationFinder(
     ref_imgs, ref_angles, vision_params, intrinsic_mtx

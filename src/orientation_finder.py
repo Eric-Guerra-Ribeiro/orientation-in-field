@@ -35,7 +35,7 @@ class OrientationFinder:
 
         self.detector = cv2.ORB_create(
             nfeatures=self.vision_params.nfeatures, scaleFactor=self.vision_params.scaleFactor,
-
+            patchSize=self.vision_params.patchSize, edgeThreshold=self.vision_params.patchSize
         )
         self.matcher = cv2.FlannBasedMatcher(
             indexParams={ 'algorithm':6, 'table_number':6, 'key_size':12, 'multi_probe_level':1},
