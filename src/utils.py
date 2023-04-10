@@ -64,3 +64,8 @@ def calc_euler_angles(rotation_mtx):
         pitch = np.arctan2(-rotation_mtx[2][0], sy)
         roll = np.arctan2(-rotation_mtx[1][2], rotation_mtx[1][1])
     return np.rad2deg(yaw), np.rad2deg(pitch), np.rad2deg(roll)
+
+def cost(time_mean, time_std, error_mean, error_std):
+    time_cost = time_mean + time_std if time_mean > 100 else 0
+    error_cost = error_mean + error_std/2
+    return time_cost + error_cost
