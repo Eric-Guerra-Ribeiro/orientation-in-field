@@ -7,6 +7,7 @@ import time
 
 from src.orientation_finder import OrientationFinder, OrientMethod
 from src.utils import get_angle_diff, build_intrinsic_mtx
+from src.params import VisionParams
 
 # Camera Params
 fov = 1.012300
@@ -17,9 +18,9 @@ fy = cy/np.tan(fov/2)
 
 intrinsic_mtx = build_intrinsic_mtx(fx, fy, cx, cy)
 
-dataset_path = Path("./dataset/A/")
+dataset_path = Path("./dataset/ulm/")
 
-use45s = True
+use45s = False
 
 ref_imgs = []
 ref_angles = []
@@ -41,7 +42,11 @@ for file in dataset_path.glob("*.png"):
     angles.append(img_angle)
     test_cases.append(img_case)
 
-orientation_finder = OrientationFinder(ref_imgs, ref_angles, intrinsic_mtx)
+vision_params = VisionParams(4500, 1.19, 50, 0.9999, 2)
+
+orientation_finder = OrientationFinder(
+    ref_imgs, ref_angles, vision_params, intrinsic_mtx
+)
 errors = []
 
 ### Comment the lines below to select the method to use

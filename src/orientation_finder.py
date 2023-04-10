@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 
 from src.utils import get_angle_diff, weighted_avg, calc_euler_angles
+from src.params import VisionParams
 
 class OrientMethod(Enum):
     BEST_REF = 0
@@ -22,24 +23,29 @@ class OrientationFinder:
     Reference = namedtuple('Reference', ['img', 'angle', 'points', 'descriptor'])
     RefMatch = namedtuple('RefMatch', ['ref_angle', 'num_matches'])
 
-    def __init__(self, ref_imgs, ref_angles, intrinsic_mtx=None) -> None:
+    def __init__(self, ref_imgs, ref_angles, vision_params:VisionParams, intrinsic_mtx=None) -> None:
         """
         Initializes the Orientation Finder
         :param ref_imgs: List with the reference images
         :param ref_angles: List with the angles of each reference image, in the same order as the images
         """
-        self.detector = cv2.ORB_create(nfeatures=4500, scaleFactor=1.19)
+        self.vision_params = vision_params
+
+        self.intrinsic_mtx = intrinsic_mtx
+
+        self.detector = cv2.ORB_create(
+            nfeatures=self.vision_params.nfeatures, scaleFactor=self.vision_params.scaleFactor,
+
+        )
         self.matcher = cv2.FlannBasedMatcher(
             indexParams={ 'algorithm':6, 'table_number':6, 'key_size':12, 'multi_probe_level':1},
-            searchParams={'checks': 50}
+            searchParams={'checks': self.vision_params.checks}
         )
 
         self.references = [
             self.Reference(ref_img, ref_angles[i], *self.detector.detectAndCompute(ref_img, None))
             for i, ref_img in enumerate(ref_imgs)
         ]
-
-        self.intrinsic_mtx = intrinsic_mtx
 
     def get_num_equal_pts(self, ref, img_descriptors):
         """
@@ -53,7 +59,8 @@ class OrientationFinder:
         matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
         # We count the number of strong matches using a heuristic distance factor
         num_equal_pts = reduce(
-            lambda val, match: val + (1 if match[0].distance < 0.7*match[1].distance else 0),
+            lambda val, match:
+                val + (1 if len(match) >=2 and match[0].distance < 0.7*match[1].distance else 0),
             matches, 0
         )
         return num_equal_pts
@@ -70,7 +77,9 @@ class OrientationFinder:
         """
         matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
         # We determine the strong_matches using a heuristic distance factor
-        strong_matches = [r1 for r1, r2 in matches if r1.distance < 0.7 * r2.distance]
+        strong_matches = [
+            match[0] for match in matches if len(match) >= 2 and match[0].distance < 0.7 * match[1].distance
+        ]
         equal_ref_pts = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
         equal_img_pts = np.array([img_pts[r.trainIdx].pt for r in strong_matches], dtype=np.float32)
         return equal_ref_pts, equal_img_pts
@@ -144,7 +153,7 @@ class OrientationFinder:
             _, _, rotation_mtx, translation_versor, inliers = cv2.recoverPose(
                 points1=equal_ref_pts, points2=equal_img_pts, cameraMatrix1=self.intrinsic_mtx,
                 distCoeffs1=None, cameraMatrix2=self.intrinsic_mtx, distCoeffs2=None,
-                method=cv2.USAC_ACCURATE, prob=0.9999, threshold=2
+                method=cv2.USAC_ACCURATE, prob=self.vision_params.prob, threshold=self.vision_params.threshold
             )
             delta_yaw, delta_pitch, delta_roll = calc_euler_angles(rotation_mtx)
             return ref.angle + delta_pitch
