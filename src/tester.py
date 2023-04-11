@@ -11,7 +11,8 @@ from src.orientation_finder import OrientationFinder, OrientMethod
 class Tester:
     dataset_path = Path("./dataset/")
     folders = [
-        "jbhcentral"
+        "jbhcentral", "kiara", "paul_lobe_haus",
+        "sepulchral", "shangai", "stadium", "ulm"
     ]
     fov = 1.012300
     cx = 320
