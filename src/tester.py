@@ -32,9 +32,14 @@ class Tester:
         self.use_sim = use_sim
         self.test_train = train_test
     
-    def performance(self):
+    def performance(self, save_results:bool=False, save_tag:str=""):
         times = []
         errors = []
+
+        global_angles = []
+        global_cases = []
+        backgrounds = []
+
         folders = self.sim_folders if self.use_sim else ["irl"]
         for folder in folders:
             path = self.dataset_path / folder
@@ -65,6 +70,10 @@ class Tester:
                 ref_imgs, ref_angles, self.params, self.intrinsic_mtx
             )
 
+            global_angles.extend(angles)
+            global_cases.extend(test_cases)
+            backgrounds.extend(len(imgs)*[folder])
+
             for i in range(len(imgs)):
                 start_time = time.time()
                 errors.append(
@@ -76,4 +85,15 @@ class Tester:
                 times.append(end_time - start_time)
         times = 1000*np.array(times)
         errors = np.array(errors)
+        if save_results:
+            with open(f"times_{save_tag}.txt", "w") as f:
+                f.writelines(map(lambda x: f"{x}\n", times))
+            with open(f"errors_{save_tag}.txt", "w") as f:
+                f.writelines(map(lambda x: f"{x}\n", errors))
+            with open(f"angles_{save_tag}.txt", "w") as f:
+                f.writelines(map(lambda x: f"{x}\n", global_angles))
+            with open(f"cases_{save_tag}.txt", "w") as f:
+                f.writelines(map(lambda x: f"{x}\n", global_cases))
+            with open(f"backgrounds_{save_tag}.txt", "w") as f:
+                f.writelines(map(lambda x: f"{x}\n", backgrounds))
         return times.mean(), times.std(), errors.mean(), errors.std()
