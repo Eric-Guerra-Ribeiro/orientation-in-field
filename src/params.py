@@ -18,6 +18,8 @@ class VisionParams:
     max_patchSize = 50
     min_patchSize = 10
 
+    dist_ratio_thres = 0.7
+
     max_checks=100
     min_checks=1
 
@@ -33,6 +35,7 @@ class VisionParams:
         assert (self.min_scaleFactor <= scaleFactor <= self.max_scaleFactor)
         assert (self.min_patchSize <= patchSize <= self.max_patchSize)
         assert (self.min_checks <= checks <= self.max_checks)
+        assert (self.min_threshold <= threshold <= self.max_threshold)
         
 
         self.nfeatures = nfeatures
@@ -53,6 +56,16 @@ class VisionParams:
         threshold = random.randint(cls.min_threshold, cls.max_threshold)
         return VisionParams(nfeatures, scaleFactor, patchSize, checks, prob, threshold)
 
+
+    @classmethod
+    def default(cls):
+        nfeatures = 500
+        scaleFactor = 1.2
+        patchSize = 31
+        checks = 50
+        prob = 0.999
+        threshold = 1
+        return VisionParams(nfeatures, scaleFactor, patchSize, checks, prob, threshold)
 
     def __str__(self) -> str:
         return (

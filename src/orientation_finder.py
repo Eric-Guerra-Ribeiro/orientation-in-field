@@ -29,17 +29,17 @@ class OrientationFinder:
         :param ref_imgs: List with the reference images
         :param ref_angles: List with the angles of each reference image, in the same order as the images
         """
-        self.vision_params = vision_params
+        self.params = vision_params
 
         self.intrinsic_mtx = intrinsic_mtx
 
         self.detector = cv2.ORB_create(
-            nfeatures=self.vision_params.nfeatures, scaleFactor=self.vision_params.scaleFactor,
-            patchSize=self.vision_params.patchSize, edgeThreshold=self.vision_params.patchSize
+            nfeatures=self.params.nfeatures, scaleFactor=self.params.scaleFactor,
+            patchSize=self.params.patchSize, edgeThreshold=self.params.patchSize
         )
         self.matcher = cv2.FlannBasedMatcher(
             indexParams={ 'algorithm':6, 'table_number':6, 'key_size':12, 'multi_probe_level':1},
-            searchParams={'checks': self.vision_params.checks}
+            searchParams={'checks': self.params.checks}
         )
 
         self.references = [
@@ -60,7 +60,9 @@ class OrientationFinder:
         # We count the number of strong matches using a heuristic distance factor
         num_equal_pts = reduce(
             lambda val, match:
-                val + (1 if len(match) >=2 and match[0].distance < 0.7*match[1].distance else 0),
+                val + (1 if len(match) >=2
+                            and match[0].distance < self.params.dist_ratio_thres*match[1].distance
+                         else 0),
             matches, 0
         )
         return num_equal_pts
@@ -78,7 +80,8 @@ class OrientationFinder:
         matches = self.matcher.knnMatch(ref.descriptor, img_descriptors, k=2)
         # We determine the strong_matches using a heuristic distance factor
         strong_matches = [
-            match[0] for match in matches if len(match) >= 2 and match[0].distance < 0.7 * match[1].distance
+            match[0] for match in matches
+            if len(match) >= 2 and match[0].distance < self.params.dist_ratio_thres*match[1].distance
         ]
         equal_ref_pts = np.array([ref.points[r.queryIdx].pt for r in strong_matches], dtype=np.float32)
         equal_img_pts = np.array([img_pts[r.trainIdx].pt for r in strong_matches], dtype=np.float32)
@@ -153,10 +156,11 @@ class OrientationFinder:
             _, _, rotation_mtx, translation_versor, inliers = cv2.recoverPose(
                 points1=equal_ref_pts, points2=equal_img_pts, cameraMatrix1=self.intrinsic_mtx,
                 distCoeffs1=None, cameraMatrix2=self.intrinsic_mtx, distCoeffs2=None,
-                method=cv2.USAC_ACCURATE, prob=self.vision_params.prob, threshold=self.vision_params.threshold
+                method=cv2.USAC_ACCURATE, prob=self.params.prob, threshold=self.params.threshold
             )
-            delta_yaw, delta_pitch, delta_roll = calc_euler_angles(rotation_mtx)
-            return ref.angle + delta_pitch
+            # Robot's yaw is camera's pitch
+            _, delta_pitch, _ = calc_euler_angles(rotation_mtx)
+            return (ref.angle + delta_pitch)%360
         except cv2.error:
             # Hack: for some reason, on the reference images, opencv uses the wrong
             # overloaded function and it raises an assertion error.
