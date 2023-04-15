@@ -7,7 +7,7 @@ from src.utils import cost
 from src.tester import Tester
 
 min_cost = inf
-num_iter = 1
+num_iter = 150
 num_refs = 8
 ref_angles = {360*i/num_refs for i in range(num_refs)}
 
