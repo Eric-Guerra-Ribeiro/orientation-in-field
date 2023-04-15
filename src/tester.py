@@ -10,7 +10,7 @@ from src.orientation_finder import OrientationFinder, OrientMethod
 
 class Tester:
     dataset_path = Path("./dataset/")
-    folders = [
+    sim_folders = [
         "jbhcentral", "kiara", "paul_lobe_haus",
         "sepulchral", "shangai", "stadium", "ulm"
     ]
@@ -22,15 +22,21 @@ class Tester:
 
     intrinsic_mtx = build_intrinsic_mtx(fx, fy, cx, cy)
 
-    def __init__(self, params:VisionParams, orient_method:OrientMethod, ref_angles:set()):
+    def __init__(
+        self, params:VisionParams, orient_method:OrientMethod,
+        ref_angles:set(), use_sim:bool, train_test:str
+    ):
         self.params = params
         self.orient_method = orient_method
         self.ref_angles = ref_angles
+        self.use_sim = use_sim
+        self.test_train = train_test
     
     def performance(self):
         times = []
         errors = []
-        for folder in self.folders:
+        folders = self.sim_folders if self.use_sim else ["irl"]
+        for folder in folders:
             path = self.dataset_path / folder
 
             ref_imgs = []
@@ -50,7 +56,7 @@ class Tester:
                 if img_case == "ref" and (img_angle in self.ref_angles):
                     ref_imgs.append(img)
                     ref_angles.append(img_angle)
-                if img_test_train == "train":
+                if img_test_train == self.test_train:
                     imgs.append(img)
                     angles.append(img_angle)
                     test_cases.append(img_case)

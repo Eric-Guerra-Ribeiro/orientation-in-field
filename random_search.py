@@ -7,7 +7,7 @@ from src.utils import cost
 from src.tester import Tester
 
 min_cost = inf
-num_iter = 150
+num_iter = 1
 num_refs = 8
 ref_angles = {360*i/num_refs for i in range(num_refs)}
 
@@ -15,7 +15,7 @@ start_time = time.time()
 for i in range(num_iter):
     params = VisionParams.construct_random()
     time_mean, time_std, error_mean, error_std = Tester(
-        params, OrientMethod.RECOVER_POSE, ref_angles
+        params, OrientMethod.RECOVER_POSE, ref_angles, True, "train"
     ).performance()
     iter_cost = cost(time_mean, time_std, error_mean, error_std)
     if iter_cost < min_cost:
