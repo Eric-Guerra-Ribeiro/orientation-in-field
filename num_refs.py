@@ -4,7 +4,7 @@ from src.orientation_finder import OrientMethod
 
 def method_str(method:OrientMethod):
     if method == OrientMethod.RECOVER_POSE:
-        return "returnpose"
+        return "recoverpose"
     if method == OrientMethod.BEST_REF:
         return "bestref"
 
@@ -39,7 +39,7 @@ with open(f"times_std_{method_str(method)}.txt", "w") as f:
     f.writelines(map(lambda num: f"{num}\n", times_std))
 with open(f"errors_mean_{method_str(method)}.txt", "w") as f:
     f.writelines(map(lambda num: f"{num}\n", errors_mean))
-with open(f"erros_std_{method_str(method)}.txt", "w") as f:
+with open(f"errors_std_{method_str(method)}.txt", "w") as f:
     f.writelines(map(lambda num: f"{num}\n", errors_std))
 
 for i, num_ref in enumerate(num_refs):
