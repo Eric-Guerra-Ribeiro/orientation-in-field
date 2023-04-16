@@ -4,7 +4,7 @@ from src.orientation_finder import OrientMethod
 
 method = OrientMethod.RECOVER_POSE
 
-params = VisionParams(1260, 1.9575404949239472, 31, 20, 0.9980880128787601, 10)
+params = VisionParams(1230, 1.8847186328577767, 44, 18, 0.9827160798859101, 7)
 
 ref_angles = {45*i for i in range(8)}
 

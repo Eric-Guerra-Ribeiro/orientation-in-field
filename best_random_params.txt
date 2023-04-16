@@ -1,6 +1,8 @@
-nfeatures: 1260
-scaleFactor: 1.9575404949239472
-pathSize: 31
-checks: 20
-prob: 0.9980880128787601
-threshold: 10
+nfeatures: 1230
+scaleFactor: 1.8847186328577767
+pathSize: 44
+checks: 18
+prob: 0.9827160798859101
+threshold: 7
+Time:  96±30 ms
+Error: 4.05±15.41 º
