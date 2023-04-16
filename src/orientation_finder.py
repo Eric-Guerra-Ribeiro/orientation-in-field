@@ -92,16 +92,9 @@ class OrientationFinder:
         Returns the best reference found.
         :return: Best reference found
         """
-
-        best_ref = None
-        max_matches = -1
-
-        for ref in self.references:
-            num_matches = self.get_num_equal_pts(ref, img_descriptors)
-            if num_matches > max_matches:
-                best_ref = ref
-                max_matches = num_matches
-
+        best_ref = max(
+            self.references, key=lambda ref: self.get_num_equal_pts(ref, img_descriptors)
+        )
         return best_ref
 
     def calc_orientation_best_ref(self, img_descriptors):
