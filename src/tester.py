@@ -40,6 +40,8 @@ class Tester:
         global_cases = []
         backgrounds = []
 
+        self.fails = []
+
         folders = self.sim_folders if self.use_sim else ["irl"]
         for folder in folders:
             path = self.dataset_path / folder
@@ -75,14 +77,16 @@ class Tester:
             backgrounds.extend(len(imgs)*[folder])
 
             for i in range(len(imgs)):
-                start_time = time.time()
-                errors.append(
-                    abs(get_angle_diff(
+                try:
+                    start_time = time.time()
+                    angle_diff = abs(get_angle_diff(
                         angles[i],  orientation_finder.calc_orientation(imgs[i], self.orient_method)
                     ))
-                )
-                end_time = time.time()
-                times.append(end_time - start_time)
+                    errors.append(angle_diff)
+                    end_time = time.time()
+                    times.append(end_time - start_time)
+                except:
+                    self.fails.append(f"{test_cases[i]}_{angles[i]}")
         times = 1000*np.array(times)
         errors = np.array(errors)
         if save_results:

@@ -8,16 +8,18 @@ params = VisionParams(1230, 1.8847186328577767, 44, 18, 0.9827160798859101, 7)
 
 ref_angles = {45*i for i in range(8)}
 
-time_mean, time_std, error_mean, error_std = Tester(
-    params, method, ref_angles, True, "test"
-).performance(True, "recoverpose")
+tester = Tester(params, method, ref_angles, False, "test")
+
+time_mean, time_std, error_mean, error_std = tester.performance(True, "irl_recoverpose")
 
 print(f"recover pose: {time_mean}±{time_std} ms; {error_mean}±{error_std}º")
+print(f"Fails: {tester.fails}")
 
 method = OrientMethod.BEST_REF
 
 time_mean, time_std, error_mean, error_std = Tester(
-    params, method, ref_angles, True, "test"
-).performance(True, "bestref")
+    params, method, ref_angles, False, "test"
+).performance(True, "irl_bestref")
 
 print(f"best ref: {time_mean}±{time_std} ms; {error_mean}±{error_std}º")
+print(f"Fails: {tester.fails}")
