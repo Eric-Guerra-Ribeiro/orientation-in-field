@@ -18,8 +18,11 @@ fy = cy/np.tan(fov/2)
 
 intrinsic_mtx = build_intrinsic_mtx(fx, fy, cx, cy)
 
-dataset_path = Path("./dataset/ulm/")
+# dataset_path = Path("./dataset/irl/")
+# image_path = Path("./dataset/irl/test2_210_test.png")
 
+dataset_path = Path("./dataset/sepulchral/")
+image_path = Path("./dataset/sepulchral/test4_15_test.png")
 use45s = False
 
 ref_imgs = []
@@ -42,7 +45,7 @@ for file in dataset_path.glob("*.png"):
     angles.append(img_angle)
     test_cases.append(img_case)
 
-vision_params = VisionParams(5000, 1.19, 31, 50, 0.9999, 2)
+vision_params = VisionParams(1230, 1.8847186328577767, 44, 18, 0.9827160798859101, 7)
 
 orientation_finder = OrientationFinder(
     ref_imgs, ref_angles, vision_params, intrinsic_mtx
@@ -54,22 +57,29 @@ errors = []
 # orient_method = OrientMethod.WEIGHT_AVG
 orient_method = OrientMethod.RECOVER_POSE
 
-times = []
-for i in range(len(imgs)):
-    start_time = time.time()
-    errors.append(abs(get_angle_diff(angles[i],  orientation_finder.calc_orientation(imgs[i], orient_method))))
-    end_time = time.time()
-    times.append(end_time - start_time)
+img = cv2.imread(str(image_path))
 
-times = 1000*np.array(times) # Converting to ms
+angle = orientation_finder.calc_orientation(img, orient_method)
 
-print(f"Execution Time: {times.mean():.0f}±{times.std():.0f} ms per iteration")
-print ("Mean: %.2f degrees" % np.array(errors).mean())
-print ("Std Dev: %.2f degrees" % np.array(errors).std())    
+print(angle)
 
-plt.hist(errors, bins=np.linspace(0, 50, 25), histtype='bar', ec='black')
-plt.title('Error Histogram')
-plt.xlabel('Angle Error')
-plt.ylabel('Frequency')
-plt.locator_params(axis='y', integer=True)
-plt.show()
+# times = []
+# for i in range(len(imgs)):
+#     start_time = time.time()
+#     errors.append(abs(get_angle_diff(angles[i],  )))
+#     end_time = time.time()
+#     times.append(end_time - start_time)
+#     break
+
+# times = 1000*np.array(times) # Converting to ms
+
+# print(f"Execution Time: {times.mean():.0f}±{times.std():.0f} ms per iteration")
+# print ("Mean: %.2f degrees" % np.array(errors).mean())
+# print ("Std Dev: %.2f degrees" % np.array(errors).std())    
+
+# plt.hist(errors, bins=np.linspace(0, 50, 25), histtype='bar', ec='black')
+# plt.title('Error Histogram')
+# plt.xlabel('Angle Error')
+# plt.ylabel('Frequency')
+# plt.locator_params(axis='y', integer=True)
+# plt.show()

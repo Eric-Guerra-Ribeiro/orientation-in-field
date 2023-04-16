@@ -4,6 +4,7 @@ from enum import Enum
 
 import numpy as np
 import cv2
+import PIL.Image
 
 from src.utils import get_angle_diff, weighted_avg, calc_euler_angles
 from src.params import VisionParams
@@ -136,7 +137,7 @@ class OrientationFinder:
         angle = main_angle + delta_angle
         return angle if angle >= 0 else 360 + angle
 
-    def calc_orientation_recover_pose(self, img_pts, img_descriptors):
+    def calc_orientation_recover_pose(self, img_pts, img_descriptors, img):
         """
         Calculates the orientation according to the cv2.recoverPose function.
         :param img_pts: image points found by the detector.
@@ -151,6 +152,7 @@ class OrientationFinder:
                 distCoeffs1=None, cameraMatrix2=self.intrinsic_mtx, distCoeffs2=None,
                 method=cv2.USAC_ACCURATE, prob=self.params.prob, threshold=self.params.threshold
             )
+            self.draw_lines_difference(equal_ref_pts, equal_img_pts, img, ref.img, inliers)
             # Robot's yaw is camera's pitch
             _, delta_pitch, _ = calc_euler_angles(rotation_mtx)
             return (ref.angle + delta_pitch)%360
@@ -158,6 +160,37 @@ class OrientationFinder:
             # Hack: for some reason, on the reference images, opencv uses the wrong
             # overloaded function and it raises an assertion error.
             return ref.angle
+
+    def draw_lines_difference(self, ref_pts, img_pts, img, ref_img, inliers):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ref_img = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
+        width = 640
+        height = 480
+        for p, pref, inlier in zip(img_pts, ref_pts, inliers.ravel()): # Desenha uma linha ligando os pares de pontos
+            color = (255, 0, 0)
+            if inlier:
+                 color = (0, 255, 0)
+            # if (random.uniform(0, 1) > 0.98):
+            cv2.line(img, np.int32(pref - np.array([width,0])), np.int32(p), color)
+            cv2.line(ref_img, np.int32(pref), np.int32(p + np.array([width,0])), color)
+            # cv2.circle(img, np.int32(p), 2, (250, 0, 0), 2)
+            # cv2.circle(ref_img, np.int32(pref), 2, (0, 250, 0), 2)
+        for p, pref, inlier in zip(img_pts, ref_pts, inliers.ravel()): # Desenha uma linha ligando os pares de pontos
+            color = (255, 0, 0)
+            if inlier:
+                 color = (0, 255, 0)
+            # if (random.uniform(0, 1) > 0.98):
+            # cv2.line(img, np.int32(pref), np.int32(p), color)
+            # cv2.line(ref_img, np.int32(pref), np.int32(p), color)
+            cv2.circle(img, np.int32(p), 2, (0, 0, 250), 2)
+            cv2.circle(ref_img, np.int32(pref), 2, (255, 165, 0), 2)
+        # mid_img = np.int328(0.5*np.float64(img) + 0.5*np.float64(ref_img))
+        # PIL.Image.fromarray(img).show()
+        # PIL.Image.fromarray(ref_img).show()
+        img_concat = cv2.hconcat([ref_img, img])
+        PIL.Image.fromarray(img_concat).show()
+        # cv2.imshow("help", img)
+        # cv2.waitKey(0)
 
     def calc_orientation(self, img,  method=OrientMethod.RECOVER_POSE):
         """
@@ -174,4 +207,4 @@ class OrientationFinder:
         elif  method == OrientMethod.WEIGHT_AVG:
             return self.calc_orientation_weight_avg(img_descriptors)
         elif  method == OrientMethod.RECOVER_POSE:
-            return self.calc_orientation_recover_pose(img_pts, img_descriptors)
+            return self.calc_orientation_recover_pose(img_pts, img_descriptors, img)
